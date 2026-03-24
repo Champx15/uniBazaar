@@ -44,7 +44,7 @@ const Login = () => {
 
   const handleOAuth2Login = () => {
     window.location.href =
-      "http://localhost:8080/api/v1/oauth2/authorization/google";
+      "https://unibazaar-u36n.onrender.com/api/v1/oauth2/authorization/google";
   };
 
   const images = [Image1, Image2, Image3, Image4];
