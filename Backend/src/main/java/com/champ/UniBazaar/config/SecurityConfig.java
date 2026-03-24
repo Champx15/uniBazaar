@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -87,13 +88,15 @@ public class SecurityConfig {
             }
 
             String token = jwtService.generateToken(user.getId().toString(),user.getEmail());
-            Cookie jwtCookie = new Cookie("accessToken", token);
-            jwtCookie.setHttpOnly(true);
-            jwtCookie.setSecure(true); // only over HTTPS
-            jwtCookie.setPath("/");
-            jwtCookie.setMaxAge(60 * 60);
-            jwtCookie.setAttribute("SameSite", "Lax");
-            response.addCookie(jwtCookie);
+            ResponseCookie cookie = ResponseCookie
+                    .from("accessToken", token)
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(14 * 24 * 60 * 60)
+                    .sameSite("Lax")
+                    .build();
+            response.addHeader("Set-Cookie", cookie.toString());
             // Redirect with token or return JSON
             response.sendRedirect(targetUrl);
         };
@@ -102,7 +105,7 @@ public class SecurityConfig {
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-                "https://uni-bazaar-nu.vercel.app/"
+                "https://uni-bazaar-nu.vercel.app"
 
 
         ));

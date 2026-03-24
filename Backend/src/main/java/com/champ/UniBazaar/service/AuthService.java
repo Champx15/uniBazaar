@@ -12,6 +12,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -49,13 +50,15 @@ public class AuthService {
                 }
 
                 String jwt = jwtService.generateToken(user.getId().toString(), user.getEmail());
-                Cookie cookie = new Cookie("accessToken", jwt);
-                cookie.setHttpOnly(true);
-                cookie.setSecure(true);
-                cookie.setPath("/");
-                cookie.setMaxAge(60 * 60); //TODO:  14 * 24 * 60 * 60 * 1000
-                cookie.setAttribute("SameSite", "Lax");
-                httpResponse.addCookie(cookie);
+                ResponseCookie cookie = ResponseCookie
+                        .from("accessToken", jwt)
+                        .httpOnly(true)
+                        .secure(true)
+                        .path("/")
+                        .maxAge(14 * 24 * 60 * 60)
+                        .sameSite("Lax")
+                        .build();
+                httpResponse.addHeader("Set-Cookie", cookie.toString());
                 return new LoginResponseDto(true,"SUCCESS");
             }
             return new LoginResponseDto(false, "INVALID_CREDENTIALS");
@@ -133,12 +136,14 @@ public class AuthService {
 
     public void getResetToken(String email, HttpServletResponse response) {
         String resetToken = jwtService.generateResetToken(email);
-        Cookie cookie = new Cookie("resetToken", resetToken);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(5 * 60); // 5 minutes
-        cookie.setAttribute("SameSite", "Strict");
-        response.addCookie(cookie);
+        ResponseCookie cookie = ResponseCookie
+                .from("resetToken", resetToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(5*60)
+                .sameSite("Lax")
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 }
