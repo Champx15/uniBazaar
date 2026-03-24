@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600&display=swap');
+@import "tailwindcss";
+@layer base {
+  :root {
+    --font-dancing: 'Dancing Script', cursive;
+    --font-comic: 'Comic Sans MS', cursive;
+  }
+}
+
+@layer components {
+  .font-dancing {
+    font-family: 'Dancing Script', cursive;
+    
+  }
+  .font-comic {
+    font-family: 'Comic Sans MS', cursive;
+  }
+}
+html {
+  font-size: 17px;
+}
+
+/* Hide scrollbar for Chrome, Safari and Edge */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
