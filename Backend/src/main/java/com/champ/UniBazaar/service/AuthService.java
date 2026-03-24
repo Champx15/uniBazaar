@@ -56,7 +56,7 @@ public class AuthService {
                         .secure(true)
                         .path("/")
                         .maxAge(14 * 24 * 60 * 60)
-                        .sameSite("Lax")
+                        .sameSite("None")
                         .build();
                 httpResponse.addHeader("Set-Cookie", cookie.toString());
                 return new LoginResponseDto(true,"SUCCESS");
@@ -142,7 +142,7 @@ public class AuthService {
                 .secure(true)
                 .path("/")
                 .maxAge(5*60)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
     }

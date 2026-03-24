@@ -94,7 +94,7 @@ public class SecurityConfig {
                     .secure(true)
                     .path("/")
                     .maxAge(14 * 24 * 60 * 60)
-                    .sameSite("Lax")
+                    .sameSite("None")
                     .build();
             response.addHeader("Set-Cookie", cookie.toString());
             // Redirect with token or return JSON
