@@ -51,7 +51,7 @@ public class AuthService {
                 String jwt = jwtService.generateToken(user.getId().toString(), user.getEmail());
                 Cookie cookie = new Cookie("accessToken", jwt);
                 cookie.setHttpOnly(true);
-                cookie.setSecure(false);
+                cookie.setSecure(true);
                 cookie.setPath("/");
                 cookie.setMaxAge(60 * 60); //TODO:  14 * 24 * 60 * 60 * 1000
                 cookie.setAttribute("SameSite", "Lax");
@@ -135,7 +135,7 @@ public class AuthService {
         String resetToken = jwtService.generateResetToken(email);
         Cookie cookie = new Cookie("resetToken", resetToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);
+        cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setMaxAge(5 * 60); // 5 minutes
         cookie.setAttribute("SameSite", "Strict");

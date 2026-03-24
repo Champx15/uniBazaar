@@ -70,7 +70,7 @@ public class SecurityConfig {
     private AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler() {
         return (request, response, authentication) -> {
             SavedRequest savedRequest = new HttpSessionRequestCache().getRequest(request, response);
-            String targetUrl = (savedRequest != null) ? savedRequest.getRedirectUrl() : "http://localhost:5173/";
+            String targetUrl = (savedRequest != null) ? savedRequest.getRedirectUrl() : "https://uni-bazaar-nu.vercel.app/";
             // Get OAuth2 user info
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             String email = oAuth2User.getAttribute("email");
@@ -82,14 +82,14 @@ public class SecurityConfig {
                 return repo.save(newUser);
             });
             if (user.getStatus().equals(UserStatus.BANNED)) {
-                response.sendRedirect("http://localhost:5173/banned");
+                response.sendRedirect("https://uni-bazaar-nu.vercel.app/banned");
                 return;
             }
 
             String token = jwtService.generateToken(user.getId().toString(),user.getEmail());
             Cookie jwtCookie = new Cookie("accessToken", token);
             jwtCookie.setHttpOnly(true);
-            jwtCookie.setSecure(false); // only over HTTPS
+            jwtCookie.setSecure(true); // only over HTTPS
             jwtCookie.setPath("/");
             jwtCookie.setMaxAge(60 * 60);
             jwtCookie.setAttribute("SameSite", "Lax");
@@ -102,10 +102,7 @@ public class SecurityConfig {
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://192.168.1.48:5173",
-                "http://192.168.1.19:5173",
-                "http://10.181.142.118:5173"
+                "https://uni-bazaar-nu.vercel.app/"
 
 
         ));
