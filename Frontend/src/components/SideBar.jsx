@@ -142,7 +142,7 @@ function SideBar({ setToast }) {
               } else setIdentityVerificationOpen(true);
             } else setIsSellModalOpen(true);
           }
-          setToast({ message: "Please log in to list items", type: "info" });
+          else setToast({ message: "Please log in to list items", type: "info" });
         }}
         className="w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-3 rounded-lg transition-colors mb-4 flex items-center justify-center gap-2"
       >
