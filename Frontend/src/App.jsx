@@ -21,6 +21,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminRoute from "./components/AdminRoute";
 import Banned from "./pages/Banned";
 import { PublicListingCard } from "./components/PublicListingCard";
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import conf from "./conf/conf";
 
 function AppShell() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
@@ -85,6 +87,7 @@ function AppShell() {
 function App() {
   return (
     <>
+    <GoogleOAuthProvider clientId={conf.googleClientId}>
       <AuthContextProvider>
         <UserContextProvider>
           <WishlistContextProvider>
@@ -96,6 +99,7 @@ function App() {
           </WishlistContextProvider>
         </UserContextProvider>
       </AuthContextProvider>
+    </GoogleOAuthProvider>
     </>
   );
 }

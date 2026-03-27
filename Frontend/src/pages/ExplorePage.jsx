@@ -227,7 +227,7 @@ export default function ExplorePage({ isMobile }) {
         removeWishlist(listing.id);
         setToast({ message: "Removed from saved", type: "info" });
       } else {
-        addWishlist(listing);
+        addWishlist(listing.id);
         setToast({ message: "Added to saved! ♥", type: "success" });
       }
     },

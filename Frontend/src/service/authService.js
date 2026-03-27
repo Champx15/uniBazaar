@@ -167,6 +167,27 @@ export class AuthService {
     return true;
   }
 
+  async googleAuth( token ) {
+  try {
+    const res = await fetch(`${conf.apiBase}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Google auth failed");
+    }
+
+   return data;
+  } catch (error) {
+    console.log("Error: ", error);
+    return { success: false, error: error.message };
+  }
+}
+
 }
 
 const authService = new AuthService();

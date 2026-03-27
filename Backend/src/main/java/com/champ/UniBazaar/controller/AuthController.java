@@ -4,8 +4,11 @@ import com.champ.UniBazaar.dto.RequestDto.*;
 import com.champ.UniBazaar.dto.ResponseDto.CursorResponse;
 import com.champ.UniBazaar.dto.ResponseDto.LoginResponseDto;
 import com.champ.UniBazaar.entity.Listing;
+import com.champ.UniBazaar.entity.User;
 import com.champ.UniBazaar.repo.ListingRepo;
 import com.champ.UniBazaar.service.AuthService;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -13,10 +16,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -75,6 +80,15 @@ public class AuthController {
         Boolean resetFailed = authService.resetPass(requestDto.getNewPass(), request);
         if (resetFailed) return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<Void> googleAuth(
+            @RequestBody GoogleTokenRequest request,
+            HttpServletResponse response
+    ) throws Exception {
+        authService.googleAuth(request,response);
+        return new ResponseEntity<>(HttpStatus.CREATED);
     }
 
 }

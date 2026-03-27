@@ -8,6 +8,8 @@ import com.champ.UniBazaar.repo.ProfileRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 public class UserService {
     @Autowired
@@ -22,6 +24,7 @@ public class UserService {
     public void delete(Long userId) {
         User user = profileRepo.findById(userId).orElseThrow(() -> new RuntimeException("User doesn't exist"));
         user.setStatus(UserStatus.INACTIVE);
+        user.setEmail("deleted_user_"+user.getEmail()+ UUID.randomUUID());
        profileRepo.save(user);
     }
 

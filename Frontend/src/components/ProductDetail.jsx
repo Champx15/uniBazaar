@@ -98,6 +98,7 @@ const ProductDetail = ({ setToast }) => {
   const handleSave = async () => {
     if (!user) {
       navigate("/login");
+      setToast?.({ message: "Please log in to save listings", type: "info" });
       return;
     }
     try {

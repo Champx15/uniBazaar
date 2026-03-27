@@ -3,15 +3,18 @@ package com.champ.UniBazaar.service;
 import com.champ.UniBazaar.config.JwtService;
 import com.champ.UniBazaar.dto.RequestDto.EmailRequestDto;
 import com.champ.UniBazaar.dto.RequestDto.ForgotPasswordVerifyDto;
+import com.champ.UniBazaar.dto.RequestDto.GoogleTokenRequest;
 import com.champ.UniBazaar.dto.ResponseDto.LoginResponseDto;
 import com.champ.UniBazaar.dto.RequestDto.SignupVerifyDto;
 import com.champ.UniBazaar.entity.User;
 import com.champ.UniBazaar.enums.UserStatus;
 import com.champ.UniBazaar.repo.ProfileRepo;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
     @Autowired
     private OtpService otpService;
     @Autowired
@@ -34,7 +38,14 @@ public class AuthService {
     private JwtService jwtService;
     @Autowired
     private AuthenticationManager authManager;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
+    @Autowired
+    private GoogleService googleService;
+
+    @Value("${cookie.secure}")
+    private boolean cookieSecure;
+
+    @Value("${cookie.sameSite}")
+    private String cookieSameSite;
 
     public LoginResponseDto login(String email, String pass, HttpServletResponse httpResponse) {
         try {
@@ -45,28 +56,29 @@ public class AuthService {
             if (authentication.isAuthenticated()) {
                 User user = profileRepo.findByEmail(email)
                         .orElseThrow(() -> new RuntimeException("User doesn't exist"));
-                if(user.getStatus().equals(UserStatus.BANNED)){
-                    return new LoginResponseDto(false,"BANNED");
+                if (user.getStatus().equals(UserStatus.BANNED)) {
+                    return new LoginResponseDto(false, "BANNED");
                 }
 
                 String jwt = jwtService.generateToken(user.getId().toString(), user.getEmail());
                 ResponseCookie cookie = ResponseCookie
                         .from("accessToken", jwt)
                         .httpOnly(true)
-                        .secure(true)
+                        .secure(cookieSecure)
                         .path("/")
                         .maxAge(14 * 24 * 60 * 60)
-                        .sameSite("None")
+                        .sameSite(cookieSameSite)
                         .build();
                 httpResponse.addHeader("Set-Cookie", cookie.toString());
-                return new LoginResponseDto(true,"SUCCESS");
+                return new LoginResponseDto(true, "SUCCESS");
             }
             return new LoginResponseDto(false, "INVALID_CREDENTIALS");
         } catch (AuthenticationException e) {
             return new LoginResponseDto(false, "INVALID_CREDENTIALS");
         }
     }
-    public void logout(HttpServletResponse response){
+
+    public void logout(HttpServletResponse response) {
 
         Cookie cookie = new Cookie("accessToken", null);
         cookie.setHttpOnly(true);
@@ -122,12 +134,12 @@ public class AuthService {
                     resetToken = cookie.getValue();
                 }
             }
-        }
-        else return true;
+        } else return true;
 //        if (authHeader == null || !authHeader.startsWith("Bearer ")) return true;
 //        String token = authHeader.substring(7);
         String email = jwtService.validateResetToken(resetToken);
-        User user = profileRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("User doesn't exist"));;
+        User user = profileRepo.findByEmail(email).orElseThrow(() -> new RuntimeException("User doesn't exist"));
+        ;
         String encodedPass = encoder.encode(newPass);
         user.setPassHash(encodedPass);
         profileRepo.save(user);
@@ -139,11 +151,41 @@ public class AuthService {
         ResponseCookie cookie = ResponseCookie
                 .from("resetToken", resetToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .path("/")
-                .maxAge(5*60)
-                .sameSite("None")
+                .maxAge(5 * 60)
+                .sameSite(cookieSameSite)
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    public void googleAuth(GoogleTokenRequest request, HttpServletResponse response) throws Exception {
+        GoogleIdToken.Payload payload = googleService.verify(request.getToken());
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+        String picture = (String) payload.get("picture");
+
+        User user = profileRepo.findByEmail(email).orElseGet(() -> {
+            User newUser = new User(email, null, name, picture, null);
+            return profileRepo.save(newUser);
+        });
+
+        String jwt = jwtService.generateToken(
+                user.getId().toString(),
+                user.getEmail()
+        );
+
+        ResponseCookie cookie = ResponseCookie
+                .from("accessToken", jwt)
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .maxAge(14 * 24 * 60 * 60)
+                .sameSite(cookieSameSite)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+
+
     }
 }

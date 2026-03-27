@@ -3,7 +3,6 @@ import authService from "../../service/authService";
 import userService from "../../service/userService";
 import AuthContext from "./AuthContext";
 
-
 export const AuthContextProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,30 +28,39 @@ export const AuthContextProvider = ({ children }) => {
       await authService.login({ email, pass });
       const currentUser = await userService.getCurrentUser();
       setUser(currentUser);
-      return { success: true,user: currentUser };
+      return { success: true, user: currentUser };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const logout = () => {
+    authService.logout();
+    setUser(null);
+  };
+
+  const refreshUser = async () => {
+    try {
+      const currentUser = await userService.getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      setUser(null);
+    }
+  };
+  const googleAuth = async (token) => {
+    try {
+      await authService.googleAuth(token);
+      const currentUser = await userService.getCurrentUser();
+      setUser(currentUser);
+      return { success: true, user: currentUser };
     } catch (error) {
       return { success: false, error: error.message };
     }
   };
 
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-  };
-  
-  const refreshUser = async () => {
-  try {
-    const currentUser = await userService.getCurrentUser();
-    setUser(currentUser);
-  } catch (error) {
-    setUser(null);
-  }
-};
-
-
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, refreshUser }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, refreshUser, googleAuth }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import Image1 from "../images/img1.jpg";
 import Image2 from "../images/img2.png";
@@ -6,17 +6,26 @@ import Image3 from "../images/img3.jpg";
 import Image4 from "../images/img4.webp";
 import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "../context/AuthContext/AuthContext";
+import conf from "../conf/conf";
+import {GoogleLogin, useGoogleLogin } from "@react-oauth/google";
 
 const Login = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const navigate = useNavigate();
-  const { login, user, oAuth2Login } = useAuth();
+  const { login, user, googleAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const location = useLocation();
+
+    const googleButtonRef = useRef();
+
+  const handleCustomButtonClick = () => {
+    // Click the hidden GoogleLogin button
+    googleButtonRef.current?.querySelector('div[role="button"]')?.click();
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,10 +51,24 @@ const Login = () => {
     setLoading(false);
   };
 
-  const handleOAuth2Login = () => {
-    window.location.href =
-      "https://unibazaar-u36n.onrender.com/api/v1/oauth2/authorization/google";
-  };
+  const handleGoogleButtonClick = useGoogleLogin({
+    onSuccess: async (credentialResponse) => {
+      setLoading(true);
+      setError("");
+
+      const result = await googleAuth(credentialResponse.credential); // ← Change this
+
+      if (result.success) {
+        navigate("/explore");
+      } else {
+        setError(result.error);
+      }
+
+      setLoading(false);
+    },
+    onError: () => setError("Google login failed"),
+    flow: "implicit", // Add this to get credential
+  });
 
   const images = [Image1, Image2, Image3, Image4];
 
@@ -190,7 +213,7 @@ const Login = () => {
                       maxLength="128"
                       placeholder="••••••••••••"
                       name="password"
-                      autocomplete="current-password"
+                      autoComplete="current-password"
                       className="w-full px-4 py-3 rounded-xl bg-white/15 backdrop-blur-md border border-white/40 text-white placeholder:text-white/60 focus:bg-white/25 focus:border-white/60 focus:outline-none transition-all text-sm"
                       value={pass}
                       onChange={(e) => setPass(e.target.value)}
@@ -228,9 +251,34 @@ const Login = () => {
                 </div>
 
                 {/* Google Sign In */}
+                <div className="hidden">
+                  <div ref={googleButtonRef}>
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
+                    setLoading(true);
+                    setError("");
+
+                    console.log(credentialResponse); // Debug - see what Google sends
+
+                    const result = await googleAuth(
+                       credentialResponse.credential,
+                    );
+
+                    if (result.success) {
+                      navigate("/explore");
+                    } else {
+                      setError(result.error);
+                    }
+
+                    setLoading(false);
+                  }}
+                  onError={() => setError("Google login failed")}
+                />
+                  </div>
+                </div>
                 <button
                   className="w-full bg-white/15 backdrop-blur-md hover:bg-white/25 border border-white/40 text-white font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 md:gap-3 hover:shadow-lg text-sm md:text-sm cursor-pointer"
-                  onClick={handleOAuth2Login}
+                  onClick={handleCustomButtonClick}
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
                     <path

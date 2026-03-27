@@ -3,9 +3,13 @@ package com.champ.UniBazaar.config;
 import com.champ.UniBazaar.entity.User;
 import com.champ.UniBazaar.repo.ProfileRepo;
 import com.champ.UniBazaar.enums.UserStatus;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,6 +35,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Configuration
@@ -44,6 +52,15 @@ public class SecurityConfig {
     @Autowired private ProfileRepo repo;
     @Autowired private JwtService jwtService;
 
+    @Value("${frontend.allowed-origins}")
+    private String[] allowedOrigins;
+
+    @Value("${cookie.secure}")
+    private boolean cookieSecure;
+
+    @Value("${cookie.sameSite}")
+    private String cookieSameSite;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable);
@@ -51,7 +68,7 @@ public class SecurityConfig {
 
 //        http.httpBasic(Customizer.withDefaults());
         http.formLogin(AbstractHttpConfigurer::disable);
-        http.authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**","/oauth2/**","/login/**").permitAll()
+        http.authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**","/oauth2/**","/login/**","/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/listings", "/listings/*").permitAll()
                 .requestMatchers("/listings/user").authenticated()
                 .requestMatchers("/admin/**").hasAuthority("ADMIN").anyRequest().authenticated());
@@ -61,54 +78,63 @@ public class SecurityConfig {
                 )
         );
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        http.oauth2Login(oauth2 -> oauth2
-                .successHandler(oauth2AuthenticationSuccessHandler()));
+//        http.oauth2Login(oauth2 -> oauth2
+//                .successHandler(oauth2AuthenticationSuccessHandler()));
         return http.build();
 
 
     }
 
-    private AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler() {
-        return (request, response, authentication) -> {
-            SavedRequest savedRequest = new HttpSessionRequestCache().getRequest(request, response);
-            String targetUrl = (savedRequest != null) ? savedRequest.getRedirectUrl() : "https://uni-bazaar-nu.vercel.app/";
-            // Get OAuth2 user info
-            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-            String email = oAuth2User.getAttribute("email");
-            String name = oAuth2User.getAttribute("name");
-            String pfImageUrl = oAuth2User.getAttribute("picture");
+//
+//    @Bean
+//    public GoogleIdTokenVerifier googleTokenVerifier() throws GeneralSecurityException, IOException {
+//        return new GoogleIdTokenVerifier.Builder(
+//                new NetHttpTransport(),
+//                new JacksonFactory()
+//        )
+//                .setAudience(Collections.singletonList("YOUR_GOOGLE_CLIENT_ID"))
+//                .build();
+//    }
 
-            User user = repo.findByEmail(email).orElseGet(() ->{
-                User newUser = new User(email,null,name,pfImageUrl,null);
-                return repo.save(newUser);
-            });
-            if (user.getStatus().equals(UserStatus.BANNED)) {
-                response.sendRedirect("https://uni-bazaar-nu.vercel.app/banned");
-                return;
-            }
 
-            String token = jwtService.generateToken(user.getId().toString(),user.getEmail());
-            ResponseCookie cookie = ResponseCookie
-                    .from("accessToken", token)
-                    .httpOnly(true)
-                    .secure(true)
-                    .path("/")
-                    .maxAge(14 * 24 * 60 * 60)
-                    .sameSite("None")
-                    .build();
-            response.addHeader("Set-Cookie", cookie.toString());
-            // Redirect with token or return JSON
-            response.sendRedirect(targetUrl);
-        };
-    }
+//    private AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler() {
+//        return (request, response, authentication) -> {
+//            SavedRequest savedRequest = new HttpSessionRequestCache().getRequest(request, response);
+//            String targetUrl = (savedRequest != null) ? savedRequest.getRedirectUrl() :allowedOrigins[0]+"/";
+//            System.out.println("targetUrl: "+targetUrl);
+//            // Get OAuth2 user info
+//            OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+//            String email = oAuth2User.getAttribute("email");
+//            String name = oAuth2User.getAttribute("name");
+//            String pfImageUrl = oAuth2User.getAttribute("picture");
+//
+//            User user = repo.findByEmail(email).orElseGet(() ->{
+//                User newUser = new User(email,null,name,pfImageUrl,null);
+//                return repo.save(newUser);
+//            });
+//            if (user.getStatus().equals(UserStatus.BANNED)) {
+//                response.sendRedirect(allowedOrigins[0]+"/banned");
+//                return;
+//            }
+//
+//            String token = jwtService.generateToken(user.getId().toString(),user.getEmail());
+//            ResponseCookie cookie = ResponseCookie
+//                    .from("accessToken", token)
+//                    .httpOnly(true)
+//                    .secure(cookieSecure)
+//                    .path("/")
+//                    .maxAge(14 * 24 * 60 * 60)
+//                    .sameSite(cookieSameSite)
+//                    .build();
+//            response.addHeader("Set-Cookie", cookie.toString());
+//            // Redirect with token or return JSON
+//            response.sendRedirect(targetUrl);
+//        };
+//    }
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "https://uni-bazaar-nu.vercel.app"
-
-
-        ));
+        config.setAllowedOrigins(Arrays.asList(allowedOrigins));
         config.setAllowedMethods(List.of("GET","POST","DELETE","OPTIONS","PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
